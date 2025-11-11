@@ -11,6 +11,12 @@ const RAW_BASE =
   process.env.REACT_APP_API_BASE ||
   '/api';
 
+// Emit a console warning if base URL envs are not set as expected
+if (!process.env.REACT_APP_API_BASE_URL && !process.env.REACT_APP_API_BASE) {
+  // eslint-disable-next-line no-console
+  console.warn('[api] REACT_APP_API_BASE_URL not set; defaulting to relative "/api". Set REACT_APP_API_BASE_URL (e.g., https://backend:3001/api)');
+}
+
 /**
  * Normalize base URL:
  * - Trim whitespace
@@ -45,11 +51,24 @@ function normalizePath(path) {
   let p = String(path || '');
   // Disallow absolute URLs to avoid bypassing BASE_URL and causing CORS/method issues
   if (/^https?:\/\//i.test(p)) {
-    throw new Error('Absolute URLs are not allowed in api client paths. Provide a relative API path like "/auth/register".');
+    throw new Error('Absolute URLs are not allowed in api client paths. Provide a relative API path like "/auth/register/".');
   }
   if (!p.startsWith('/')) p = `/${p}`;
   // prevent double /api when base already ends with /api
   if (p.startsWith('/api/')) p = p.replace(/^\/api/, '');
+
+  // Force trailing slash for auth POST endpoints to avoid APPEND_SLASH redirect on POST
+  const needsSlash = [
+    '/auth/token',
+    '/auth/login',
+    '/auth/register',
+    '/auth/token/refresh',
+    '/auth/token/verify',
+  ];
+  const withoutSlash = p.endsWith('/') ? p.slice(0, -1) : p;
+  if (needsSlash.includes(withoutSlash)) {
+    p = `${withoutSlash}/`;
+  }
   return p;
 }
 
