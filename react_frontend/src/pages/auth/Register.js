@@ -7,12 +7,24 @@ export default function Register() {
   const { actions } = useAuth();
   const toast = useToast();
   const nav = useNavigate();
-  const [form, setForm] = useState({ name: '', email: '', password: '' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', auto_login: true });
 
   async function submit(e) {
     e.preventDefault();
     try {
-      await actions.register(form);
+      // Map UI form to API payload: username derived from name (fallback to email local-part)
+      const [first_name = '', ...rest] = (form.name || '').trim().split(' ');
+      const last_name = rest.join(' ');
+      const usernameBase = (form.name || '').trim() || (form.email?.split('@')[0] || '');
+      const body = {
+        username: usernameBase.replace(/\s+/g, '_').toLowerCase(),
+        email: form.email,
+        password: form.password,
+        first_name,
+        last_name,
+        auto_login: form.auto_login,
+      };
+      await actions.register(body);
       toast.show('Account created. Please sign in.', 'success');
       nav('/auth/login');
     } catch (e) {

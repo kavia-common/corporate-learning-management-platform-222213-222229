@@ -23,7 +23,7 @@ async function doFetch(path, options = {}, retry = true) {
     // try refresh
     const refreshToken = storage.get('refreshToken');
     if (refreshToken) {
-      const rr = await fetch(`${BASE_URL}/auth/refresh`, {
+      const rr = await fetch(`${BASE_URL}/auth/token/refresh/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ refresh: refreshToken }),

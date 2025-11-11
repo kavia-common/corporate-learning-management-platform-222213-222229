@@ -45,18 +45,26 @@ export function AuthProvider({ children }) {
 
   const actions = useMemo(() => ({
     // PUBLIC_INTERFACE
-    async login({ email, password }) {
-      /** Performs login and stores tokens and user profile. */
+    async login({ email, password, username }) {
+      /** Performs login and stores tokens and user profile using JWT /auth/token/. */
       dispatch({ type: 'LOGIN_START' });
       try {
-        const data = await api.post('/auth/login', { email, password });
+        // Backend accepts identifier (username or email) + password, or username + password
+        const creds = username ? { username, password } : { identifier: email || username, password };
+        const data = await api.post('/auth/token/', creds);
+        // SimpleJWT returns { access, refresh }; user profile can be loaded separately
         const payload = {
-          user: data.user || null,
-          accessToken: data.access || data.accessToken,
-          refreshToken: data.refresh || data.refreshToken,
-          roles: data.user?.roles || data.roles || [],
+          user: null,
+          accessToken: data.access,
+          refreshToken: data.refresh,
+          roles: [],
         };
         dispatch({ type: 'LOGIN_SUCCESS', payload });
+        // Proactively load profile to populate user and roles, but don't block login resolve
+        try {
+          const me = await api.get('/auth/me');
+          dispatch({ type: 'SET_USER', user: me, roles: me?.roles || [] });
+        } catch (_) { /* ignore */ }
         return payload;
       } catch (e) {
         dispatch({ type: 'LOGIN_ERROR', error: e.message || 'Login failed' });
@@ -65,8 +73,9 @@ export function AuthProvider({ children }) {
     },
     // PUBLIC_INTERFACE
     async register(body) {
-      /** Registers a new user. */
-      return api.post('/auth/register', body);
+      /** Registers a new user. Backend supports /auth/register/ with optional auto_login. */
+      // Ensure trailing slash to avoid 404 on some proxies; backend also supports no-slash alias
+      return api.post('/auth/register/', body);
     },
     // PUBLIC_INTERFACE
     async forgotPassword(email) {
