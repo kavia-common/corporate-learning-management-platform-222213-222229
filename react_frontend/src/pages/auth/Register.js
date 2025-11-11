@@ -28,7 +28,9 @@ export default function Register() {
       toast.show('Account created. Please sign in.', 'success');
       nav('/auth/login');
     } catch (e) {
-      toast.show(e.message || 'Registration failed', 'error');
+      const status = e?.status ? ` (status ${e.status})` : '';
+      const detail = e?.data?.detail || e?.data?.message || e?.message || 'Registration failed';
+      toast.show(`Registration error${status}: ${detail}`, 'error');
     }
   }
 

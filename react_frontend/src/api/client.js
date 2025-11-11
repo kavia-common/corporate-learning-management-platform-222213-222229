@@ -9,7 +9,10 @@ import { storage } from '../utils/storage';
 const RAW_BASE =
   process.env.REACT_APP_API_BASE_URL ||
   process.env.REACT_APP_API_BASE ||
-  '/api';
+  // If not provided, derive from window.location and append '/api'
+  ((typeof window !== 'undefined' && window.location)
+    ? `${window.location.protocol}//${window.location.host}/api`
+    : '/api');
 
 // Emit a console warning if base URL envs are not set as expected
 if (!process.env.REACT_APP_API_BASE_URL && !process.env.REACT_APP_API_BASE) {
@@ -91,6 +94,13 @@ function buildHeaders(extra = {}) {
 
 async function doFetch(path, options = {}, retry = true) {
   const normalizedPath = normalizePath(path);
+
+  // Log auth-related requests to help diagnose URL/redirect issues
+  if (/^\\/auth\\//.test(normalizedPath)) {
+    // eslint-disable-next-line no-console
+    console.log('[api][auth] request', { url: `${BASE_URL}${normalizedPath}`, method: options.method || 'GET' });
+  }
+
   const res = await fetch(`${BASE_URL}${normalizedPath}`, { ...options, headers: buildHeaders(options.headers) });
   if (res.status === 401 && retry) {
     // try refresh
@@ -123,7 +133,10 @@ export const api = {
   async get(path) {
     const res = await doFetch(path, { method: 'GET' });
     const data = await parseJSON(res);
-    if (!res.ok) throw Object.assign(new Error(data?.message || 'Request failed'), { status: res.status, data });
+    if (!res.ok) {
+      const err = Object.assign(new Error(data?.detail || data?.message || 'Request failed'), { status: res.status, data });
+      throw err;
+    }
     return data;
   },
   // PUBLIC_INTERFACE
@@ -131,7 +144,10 @@ export const api = {
   async post(path, body) {
     const res = await doFetch(path, { method: 'POST', body: JSON.stringify(body) });
     const data = await parseJSON(res);
-    if (!res.ok) throw Object.assign(new Error(data?.message || 'Request failed'), { status: res.status, data });
+    if (!res.ok) {
+      const err = Object.assign(new Error(data?.detail || data?.message || 'Request failed'), { status: res.status, data });
+      throw err;
+    }
     return data;
   },
   // PUBLIC_INTERFACE
@@ -139,7 +155,10 @@ export const api = {
   async put(path, body) {
     const res = await doFetch(path, { method: 'PUT', body: JSON.stringify(body) });
     const data = await parseJSON(res);
-    if (!res.ok) throw Object.assign(new Error(data?.message || 'Request failed'), { status: res.status, data });
+    if (!res.ok) {
+      const err = Object.assign(new Error(data?.detail || data?.message || 'Request failed'), { status: res.status, data });
+      throw err;
+    }
     return data;
   },
   // PUBLIC_INTERFACE
@@ -147,7 +166,10 @@ export const api = {
   async patch(path, body) {
     const res = await doFetch(path, { method: 'PATCH', body: JSON.stringify(body) });
     const data = await parseJSON(res);
-    if (!res.ok) throw Object.assign(new Error(data?.message || 'Request failed'), { status: res.status, data });
+    if (!res.ok) {
+      const err = Object.assign(new Error(data?.detail || data?.message || 'Request failed'), { status: res.status, data });
+      throw err;
+    }
     return data;
   },
   // PUBLIC_INTERFACE
@@ -155,7 +177,10 @@ export const api = {
   async del(path) {
     const res = await doFetch(path, { method: 'DELETE' });
     const data = await parseJSON(res);
-    if (!res.ok) throw Object.assign(new Error(data?.message || 'Request failed'), { status: res.status, data });
+    if (!res.ok) {
+      const err = Object.assign(new Error(data?.detail || data?.message || 'Request failed'), { status: res.status, data });
+      throw err;
+    }
     return data;
   },
 };

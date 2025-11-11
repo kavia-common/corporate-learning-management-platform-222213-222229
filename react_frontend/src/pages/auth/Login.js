@@ -18,7 +18,9 @@ export default function Login() {
       const to = location.state?.from?.pathname || '/dashboard';
       nav(to, { replace: true });
     } catch (err) {
-      toast.show(err.message || 'Unable to sign in', 'error');
+      const status = err?.status ? ` (status ${err.status})` : '';
+      const detail = err?.data?.detail || err?.data?.message || err?.message || 'Unable to sign in';
+      toast.show(`Login error${status}: ${detail}`, 'error');
     }
   }
 
