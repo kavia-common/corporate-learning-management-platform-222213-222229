@@ -29,6 +29,10 @@ function normalizeBase(base) {
 // If callers accidentally pass a path beginning with '/api/...', strip the extra '/api'
 function normalizePath(path) {
   let p = String(path || '');
+  // Disallow absolute URLs to avoid bypassing BASE_URL and causing CORS/method issues
+  if (/^https?:\/\//i.test(p)) {
+    throw new Error('Absolute URLs are not allowed in api client paths. Provide a relative API path like "/auth/register".');
+  }
   if (!p.startsWith('/')) p = `/${p}`;
   // prevent double /api when base already ends with /api
   if (p.startsWith('/api/')) p = p.replace(/^\/api/, '');
