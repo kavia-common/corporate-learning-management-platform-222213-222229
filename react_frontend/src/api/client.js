@@ -96,7 +96,8 @@ async function doFetch(path, options = {}, retry = true) {
   const normalizedPath = normalizePath(path);
 
   // Log auth-related requests to help diagnose URL/redirect issues
-  if (/^\\/auth\\//.test(normalizedPath)) {
+  // Use a safe string prefix check instead of a RegExp literal to avoid syntax pitfalls.
+  if (normalizedPath.startsWith('/auth/')) {
     // eslint-disable-next-line no-console
     console.log('[api][auth] request', { url: `${BASE_URL}${normalizedPath}`, method: options.method || 'GET' });
   }
