@@ -12,17 +12,31 @@ const RAW_BASE =
   '/api';
 
 /**
- * Normalize base URL to have a single leading slash and no trailing slash.
- * Examples:
- *  'https://host:3001/api/' -> 'https://host:3001/api'
- *  '/api' -> '/api'
+ * Normalize base URL:
+ * - Trim whitespace
+ * - Remove trailing slash
+ * - Ensure that '/api' path segment is present. If not present, append it.
+ *   Examples:
+ *    'https://host:3001' -> 'https://host:3001/api'
+ *    'https://host:3001/api/' -> 'https://host:3001/api'
+ *    '/backend' -> '/backend/api'
+ *    '/api' -> '/api'
  */
 function normalizeBase(base) {
   if (!base) return '/api';
-  // trim whitespace
   let b = String(base).trim();
-  // remove trailing slash
   if (b.length > 1 && b.endsWith('/')) b = b.slice(0, -1);
+  // If base already ends with '/api' or contains '/api' as the last segment, keep as-is
+  const hasApi = /(^|\/)api$/.test(b);
+  if (!hasApi) {
+    b = `${b}/api`;
+  }
+  // Ensure single leading slash for relative bases
+  if (!/^https?:\/\//i.test(b)) {
+    if (!b.startsWith('/')) b = `/${b}`;
+    // collapse double slashes except after protocol
+    b = b.replace(/\/{2,}/g, '/');
+  }
   return b;
 }
 
