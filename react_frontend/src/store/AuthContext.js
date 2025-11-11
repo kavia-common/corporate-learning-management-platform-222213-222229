@@ -46,12 +46,13 @@ export function AuthProvider({ children }) {
   const actions = useMemo(() => ({
     // PUBLIC_INTERFACE
     async login({ email, password, username }) {
-      /** Performs login and stores tokens and user profile using JWT /auth/token (client auto-prefixes /api). */
+      /** Performs login and stores tokens and user profile using JWT /auth/token/ (client auto-prefixes /api). */
       dispatch({ type: 'LOGIN_START' });
       try {
         // Backend accepts identifier (username or email) + password, or username + password
         const creds = username ? { username, password } : { identifier: email || username, password };
-        const data = await api.post('/auth/token', creds);
+        // Prefer trailing-slash URL to avoid redirect on POST when APPEND_SLASH is True
+        const data = await api.post('/auth/token/', creds);
         // SimpleJWT returns { access, refresh }; user profile can be loaded separately
         const payload = {
           user: null,
@@ -73,8 +74,8 @@ export function AuthProvider({ children }) {
     },
     // PUBLIC_INTERFACE
     async register(body) {
-      /** Registers a new user via /auth/register (client auto-prefixes /api). */
-      return api.post('/auth/register', body);
+      /** Registers a new user via /auth/register/ (client auto-prefixes /api). */
+      return api.post('/auth/register/', body);
     },
     // PUBLIC_INTERFACE
     async forgotPassword(email) {
